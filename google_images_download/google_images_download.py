@@ -254,6 +254,10 @@ class googleimagesdownload:
     def download_extended_page(self, url, chromedriver, browser):
         from selenium import webdriver
         from selenium.webdriver.common.keys import Keys
+        if selenium.__version__  >= '4.3':
+            # find_element_by_XXXXs are duplicated, instead find_element with By.ID
+            # https://www.selenium.dev/documentation/webdriver/getting_started/upgrade_to_selenium_4/ 
+            from selenium.webdriver.common.by import By
         if sys.version_info[0] < 3:
             reload(sys)
             sys.setdefaultencoding('utf8')
@@ -307,21 +311,31 @@ class googleimagesdownload:
 
         # Bypass "Before you continue" if it appears
         try:
-            browser.find_element_by_css_selector("[aria-label='Accept all']").click()
+            if selenium.__version__  >= '4.3':
+                browser.find_element(By.CSS_SELECTOR, "[aria-label='Accept all']" ).click()
+            else:
+                browser.find_element_by_css_selector("[aria-label='Accept all']").click()
             time.sleep(1)
         except selenium.common.exceptions.NoSuchElementException:
             pass
 
         print("Getting you a lot of images. This may take a few moments...")
 
-        element = browser.find_element_by_tag_name("body")
+        if selenium.__version__  >= '4.3':
+            element = browser.find_element(By.TAG_NAME, "body")
+        else:
+            element = browser.find_element_by_tag_name("body")
+
         # Scroll down
         for i in range(50):
             element.send_keys(Keys.PAGE_DOWN)
             time.sleep(0.3)
 
         try:
-            browser.find_element_by_xpath('//input[@value="Show more results"]').click()
+            if selenium.__version__  >= '4.3':
+                browser.find_element(By.XPATH, '//input[@value="Show more results"]').click()
+            else:
+                browser.find_element_by_xpath('//input[@value="Show more results"]').click()
             for i in range(50):
                 element.send_keys(Keys.PAGE_DOWN)
                 time.sleep(0.3)  # bot id protection
@@ -405,6 +419,9 @@ class googleimagesdownload:
         info = data[9]
         if info is None:
             info = data[11]
+        # This works on Jan. 11,2023 may need better solution though...
+        if info is None:
+            info = data[23]
         formatted_object = {}
         try:
             formatted_object['image_height'] = main[2]
