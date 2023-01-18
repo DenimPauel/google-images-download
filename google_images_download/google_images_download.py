@@ -416,25 +416,39 @@ class googleimagesdownload:
     def format_object(self, object):
         data = object[1]
         main = data[3]
-        info = data[9]
-        if info is None:
-            info = data[11]
-        # This works on Jan. 11,2023 may need better solution though...
-        if info is None:
-            info = data[23]
         formatted_object = {}
         try:
             formatted_object['image_height'] = main[2]
             formatted_object['image_width'] = main[1]
             formatted_object['image_link'] = main[0]
             formatted_object['image_format'] = main[0][-1 * (len(main[0]) - main[0].rfind(".") - 1):]
-            formatted_object['image_description'] = info['2003'][3]
-            formatted_object['image_host'] = info['2003'][17]
-            formatted_object['image_source'] = info['2003'][2]
             formatted_object['image_thumbnail_url'] = data[2][0]
         except Exception as e:
             print(e)
             return None
+        
+        # google sometimes seems to change the location of item.
+        # Start searching from the bottom, because data[23] is the one on Jan 19, 2023.
+        item_number = len(data) -1
+        while item_number >= 0:
+            if type(data[item_number]) is dict:
+                info = data[item_number]
+                try:
+                    formatted_object['image_description'] = info['2003'][3]
+                    formatted_object['image_host'] = info['2003'][17]
+                    formatted_object['image_source'] = info['2003'][2]
+                except Exception as e:
+                    print(e)
+                    return None
+                break
+            item_number -= 1
+        else:
+            # Doesn't have to raise exception.
+            print('Failed to find image_description, host, and source.')
+            formatted_object['image_description'] = 'NA'
+            formatted_object['image_host'] = 'NA'
+            formatted_object['image_source'] = 'NA'
+        
         return formatted_object
 
     # function to download single image
